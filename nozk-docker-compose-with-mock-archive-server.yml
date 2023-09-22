@@ -1,0 +1,41 @@
+version: "3"
+services:
+  kafka_init_topics:
+    #network_mode: host - not working on mac because docker uses a VM, so the host is the vM
+    image: docker.io/bitnami/kafka:3.1
+    entrypoint: [ '/bin/sh', '-c', 'sleep 1']
+      #command: |
+      #  "
+      #  # blocks until kafka is reachable
+      #  kafka-topics.sh --bootstrap-server host.docker.internal:9092 --list
+
+      #  echo -e 'Creating kafka topics'
+      #  kafka-topics.sh --bootstrap-server host.docker.internal:9092 --create --if-not-exists --topic testareno --replication-factor 1 --partitions 1
+      #  kafka-topics.sh --bootstrap-server host.docker.internal:9092 --create --if-not-exists --topic platform.upload.testareno --replication-factor 1 --partitions 1
+      #  kafka-topics.sh --bootstrap-server host.docker.internal:9092 --create --if-not-exists --topic platform.upload.announce --replication-factor 1 --partitions 1
+      #  echo -e 'Successfully created the following topics:'
+      #  kafka-topics.sh --bootstrap-server host.docker.internal:9092 --list
+      #  "
+  sha_extractor:
+    image: ccx-sha-extractor:no_publishers_52MB    #traceall  #sha-extractor-local-tracemallocs:compare #sha-extractor-local-tracemallocs:latest #sha-extractor-local:latest #sha-extractor:latest
+    entrypoint: [ '/bin/sh', '-c', 'sleep infinity']
+    #entrypoint: ["sh", "-c", "insights-sha-extractor /ccx-sha-extractor/config.yaml"]
+    depends_on:
+      kafka_init_topics:
+        condition: service_completed_successfully
+          #  ccx_data_pipeline:
+          #    image: ccx-data-pipeline:traceall
+          #    entrypoint: [ '/bin/sh', '-c', 'sleep infinity']
+          #    #entrypoint:  ["sh", "-c", "ccx-data-pipeline /ccx-data-pipeline/config.yaml"]
+          #    depends_on:
+          #       kafka_init_topics:
+          #         condition: service_completed_successfully
+  archiveserver:
+    image: test_insight_archive_provider:latest
+    #entrypoint: [ '/bin/sh', '-c', 'sleep infinity']
+  msgproducer:
+    image: msg_producer:latest
+    #entrypoint: [ '/bin/sh', '-c', 'sleep infinity']
+    depends_on:
+      kafka_init_topics:
+        condition: service_completed_successfully
